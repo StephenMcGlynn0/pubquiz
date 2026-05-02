@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Pub Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen font-sans">
+
+<div id="screen-home" class="flex flex-col items-center justify-center min-h-screen p-6">
+    <h1 class="text-5xl font-bold mb-2 text-yellow-400">🍺 Pub Quiz</h1>
+    <p class="text-gray-400 mb-10 text-lg">How smart are you?</p>
+    <div class="bg-gray-800 rounded-2xl p-8 w-full max-w-md shadow-xl space-y-5">
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Your Name</label>
+            <input id="playerName" type="text" placeholder="Enter your name"
+                   class="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"/>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Category</label>
+            <select id="category" class="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <option value="">Any Category</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Difficulty</label>
+            <select id="difficulty" class="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <option value="">Any</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Questions</label>
+            <select id="amount" class="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+            </select>
+        </div>
+        <button onclick="startQuiz()"
+                class="w-full bg-yellow-400 text-gray-900 font-bold py-3 rounded-xl hover:bg-yellow-300 transition text-lg">
+            Start Quiz
+        </button>
+        <button onclick="showLeaderboard()"
+                class="w-full bg-gray-700 text-white font-semibold py-2 rounded-xl hover:bg-gray-600 transition">
+            🏆 Leaderboard
+        </button>
+    </div>
+    <p id="home-error" class="text-red-400 mt-4 hidden"></p>
+</div>
+
+<div id="screen-loading" class="hidden flex-col items-center justify-center min-h-screen">
+    <div class="text-6xl mb-4 animate-bounce">🍺</div>
+    <p class="text-gray-300 text-xl">Fetching questions...</p>
+</div>
+
+<div id="screen-quiz" class="hidden flex-col items-center justify-center min-h-screen p-6">
+    <div class="w-full max-w-2xl">
+        <div class="flex justify-between text-sm text-gray-400 mb-2">
+            <span id="q-progress">Question 1 of 10</span>
+            <span id="q-score-live">Score: 0</span>
+        </div>
+        <div class="w-full bg-gray-700 rounded-full h-2 mb-6">
+            <div id="progress-bar" class="bg-yellow-400 h-2 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+        <div class="flex gap-2 mb-4">
+            <span id="q-category" class="bg-blue-800 text-blue-200 text-xs px-3 py-1 rounded-full"></span>
+            <span id="q-difficulty" class="bg-purple-800 text-purple-200 text-xs px-3 py-1 rounded-full capitalize"></span>
+        </div>
+        <div class="bg-gray-800 rounded-2xl p-6 mb-6 shadow-lg">
+            <p id="q-text" class="text-xl leading-relaxed"></p>
+        </div>
+        <div id="answers" class="grid grid-cols-1 gap-3"></div>
+        <div id="feedback" class="hidden mt-4 p-4 rounded-xl text-center text-lg font-semibold"></div>
+        <button id="next-btn" onclick="nextQuestion()"
+                class="hidden mt-6 w-full bg-yellow-400 text-gray-900 font-bold py-3 rounded-xl hover:bg-yellow-300 transition text-lg">
+            Next →
+        </button>
+    </div>
+</div>
+
+<div id="screen-results" class="hidden flex-col items-center justify-center min-h-screen p-6">
+    <div class="bg-gray-800 rounded-2xl p-8 w-full max-w-md shadow-xl text-center">
+        <div id="result-emoji" class="text-6xl mb-4"></div>
+        <h2 class="text-3xl font-bold text-yellow-400 mb-2">Quiz Done!</h2>
+        <p id="result-text" class="text-gray-300 text-xl mb-6"></p>
+        <div class="flex gap-3">
+            <button onclick="playAgain()" class="flex-1 bg-yellow-400 text-gray-900 font-bold py-3 rounded-xl hover:bg-yellow-300 transition">
+                Play Again
+            </button>
+            <button onclick="showLeaderboard()" class="flex-1 bg-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-600 transition">
+                🏆 Leaderboard
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="screen-leaderboard" class="hidden flex-col items-center justify-center min-h-screen p-6">
+    <div class="w-full max-w-2xl">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold text-yellow-400">🏆 Leaderboard</h2>
+            <button onclick="showScreen('screen-home')" class="text-gray-400 hover:text-white">← Back</button>
+        </div>
+        <div id="leaderboard-list" class="space-y-3"></div>
+    </div>
+</div>
+
+<script>
+    let questions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let playerName = '';
+    let quizCategory = '';
+    let quizDifficulty = '';
+
+    function showScreen(id) {
+        document.querySelectorAll('[id^="screen-"]').forEach(el => {
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+        });
+        const screen = document.getElementById(id);
+        screen.classList.remove('hidden');
+        screen.classList.add('flex');
+    }
+
+    async function loadCategories() {
+        try {
+            const res = await fetch('/api/categories');
+            const cats = await res.json();
+            const sel = document.getElementById('category');
+            cats.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = decodeHTML(cat);
+                sel.appendChild(opt);
+            });
+        } catch (e) {
+            console.log('Could not load categories yet');
+        }
+    }
+
+    async function startQuiz() {
+        playerName = document.getElementById('playerName').value.trim();
+        if (!playerName) {
+            const err = document.getElementById('home-error');
+            err.textContent = 'Please enter your name!';
+            err.classList.remove('hidden');
+            return;
+        }
+        document.getElementById('home-error').classList.add('hidden');
+
+        quizCategory = document.getElementById('category').value;
+        quizDifficulty = document.getElementById('difficulty').value;
+        const amount = document.getElementById('amount').value;
+
+        showScreen('screen-loading');
+
+        try {
+            let url = `/api/quiz/start?amount=${amount}`;
+            if (quizCategory) url += `&category=${encodeURIComponent(quizCategory)}`;
+            if (quizDifficulty) url += `&difficulty=${quizDifficulty}`;
+
+            const res = await fetch(url);
+            questions = await res.json();
+
+            if (!questions.length) {
+                alert('No questions found for those filters. Try different settings.');
+                showScreen('screen-home');
+                return;
+            }
+
+            currentIndex = 0;
+            score = 0;
+            showScreen('screen-quiz');
+            renderQuestion();
+            loadCategories();
+        } catch (e) {
+            alert('Failed to load questions. Try again.');
+            showScreen('screen-home');
+        }
+    }
+
+    function renderQuestion() {
+        const q = questions[currentIndex];
+        const total = questions.length;
+
+        document.getElementById('q-progress').textContent = `Question ${currentIndex + 1} of ${total}`;
+        document.getElementById('q-score-live').textContent = `Score: ${score}`;
+        document.getElementById('progress-bar').style.width = `${(currentIndex / total) * 100}%`;
+        document.getElementById('q-category').textContent = q.category;
+        document.getElementById('q-difficulty').textContent = q.difficulty;
+        document.getElementById('q-text').innerHTML = decodeHTML(q.question);
+        document.getElementById('feedback').classList.add('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
+
+        const answersDiv = document.getElementById('answers');
+        answersDiv.innerHTML = '';
+        q.allAnswers.forEach(answer => {
+            const btn = document.createElement('button');
+            btn.innerHTML = decodeHTML(answer);
+            btn.className = 'w-full bg-gray-700 text-left px-5 py-3 rounded-xl hover:bg-gray-600 transition text-base';
+            btn.onclick = () => selectAnswer(btn, answer, q.correctAnswer);
+            answersDiv.appendChild(btn);
+        });
+    }
+
+    function decodeHTML(html) {
+        const txt = document.createElement('textarea');
+        txt.innerHTML = html;
+        return txt.value;
+    }
+
+    function selectAnswer(btn, selected, correct) {
+        document.querySelectorAll('#answers button').forEach(b => b.disabled = true);
+
+        const isCorrect = selected === correct;
+        if (isCorrect) {
+            score++;
+            btn.className = btn.className.replace('bg-gray-700', 'bg-green-600');
+        } else {
+            btn.className = btn.className.replace('bg-gray-700', 'bg-red-600');
+            document.querySelectorAll('#answers button').forEach(b => {
+                if (b.textContent.trim() === decodeHTML(correct).trim()) {
+                    b.className = b.className.replace('bg-gray-700', 'bg-green-600');
+                }
+            });
+        }
+
+        const feedback = document.getElementById('feedback');
+        feedback.textContent = isCorrect ? '✅ Correct!' : `❌ Wrong! The answer was: ${decodeHTML(correct)}`;
+        feedback.className = `mt-4 p-4 rounded-xl text-center text-lg font-semibold ${isCorrect ? 'bg-green-900 text-green-200' : 'bg-red-900 text-red-200'}`;
+        feedback.classList.remove('hidden');
+
+        document.getElementById('q-score-live').textContent = `Score: ${score}`;
+        document.getElementById('next-btn').classList.remove('hidden');
+        document.getElementById('next-btn').textContent = currentIndex + 1 === questions.length ? 'Finish 🎉' : 'Next →';
+    }
+
+    function nextQuestion() {
+        currentIndex++;
+        if (currentIndex >= questions.length) {
+            finishQuiz();
+        } else {
+            renderQuestion();
+        }
+    }
+
+    async function finishQuiz() {
+        const total = questions.length;
+        const pct = Math.round((score / total) * 100);
+
+        try {
+            await fetch('/api/quiz/score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    playerName, score, total,
+                    category: quizCategory || 'Any',
+                    difficulty: quizDifficulty || 'Any'
+                })
+            });
+        } catch (e) { console.error('Score save failed', e); }
+
+        const emoji = pct === 100 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '😅' : '💀';
+        document.getElementById('result-emoji').textContent = emoji;
+        document.getElementById('result-text').textContent = `${playerName}, you got ${score} / ${total} (${pct}%)`;
+        showScreen('screen-results');
+    }
+
+    async function showLeaderboard() {
+        showScreen('screen-leaderboard');
+        const res = await fetch('/api/leaderboard');
+        const scores = await res.json();
+        const list = document.getElementById('leaderboard-list');
+        list.innerHTML = '';
+
+        if (!scores.length) {
+            list.innerHTML = '<p class="text-gray-400 text-center">No scores yet. Be the first!</p>';
+            return;
+        }
+
+        scores.forEach((s, i) => {
+            const pct = Math.round((s.score / s.total) * 100);
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+            const div = document.createElement('div');
+            div.className = 'bg-gray-800 rounded-xl px-5 py-4 flex justify-between items-center';
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">${medal}</span>
+                    <div>
+                        <p class="font-bold">${s.playerName}</p>
+                        <p class="text-xs text-gray-400">${s.category} · ${s.difficulty}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="font-bold text-yellow-400">${s.score}/${s.total}</p>
+                    <p class="text-xs text-gray-400">${pct}%</p>
+                </div>`;
+            list.appendChild(div);
+        });
+    }
+
+    function playAgain() { showScreen('screen-home'); }
+
+    showScreen('screen-home');
+    loadCategories();
+</script>
+</body>
+</html>
