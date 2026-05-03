@@ -1,5 +1,6 @@
 package ie.stephen.pubquiz.repository;
 
+import ie.stephen.pubquiz.model.CategoryInfo;
 import ie.stephen.pubquiz.model.Question;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -63,10 +64,10 @@ public class QuestionRepository {
         });
     }
 
-    public List<String> findDistinctCategories() {
-        return jdbc.queryForList(
-                "SELECT category FROM questions GROUP BY category HAVING COUNT(*) >= 5 ORDER BY category",
-                String.class
+    public List<CategoryInfo> findDistinctCategories() {
+        return jdbc.query(
+                "SELECT category, COUNT(*) as count FROM questions GROUP BY category HAVING COUNT(*) >= 5 ORDER BY category",
+                (rs, rowNum) -> new CategoryInfo(rs.getString("category"), rs.getInt("count"))
         );
     }
 

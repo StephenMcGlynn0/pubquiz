@@ -1,5 +1,6 @@
 package ie.stephen.pubquiz.controller;
 
+import ie.stephen.pubquiz.model.CategoryInfo;
 import ie.stephen.pubquiz.model.Question;
 import ie.stephen.pubquiz.model.Score;
 import ie.stephen.pubquiz.service.QuizService;
@@ -55,7 +56,7 @@ public class QuizController {
     }
 
     @GetMapping("/categories")
-    public ResponseEntity<List<String>> getCategories() {
+    public ResponseEntity<List<CategoryInfo>> getCategories() {
         return ResponseEntity.ok(quizService.getCategories());
     }
 }

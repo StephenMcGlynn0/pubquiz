@@ -1,5 +1,6 @@
 package ie.stephen.pubquiz.service;
 
+import ie.stephen.pubquiz.model.CategoryInfo;
 import ie.stephen.pubquiz.model.Question;
 import ie.stephen.pubquiz.model.Score;
 import ie.stephen.pubquiz.repository.QuestionRepository;
@@ -47,8 +48,8 @@ public class QuizService {
         return scoreRepository.getLeaderboard(20);
     }
 
-    public List<String> getCategories() {
-        List<String> categories = questionRepository.findDistinctCategories();
+    public List<CategoryInfo> getCategories() {
+        List<CategoryInfo> categories = questionRepository.findDistinctCategories();
         if (categories.isEmpty()) {
             triviaFetchService.fetchAndStore(50, null);
             categories = questionRepository.findDistinctCategories();
