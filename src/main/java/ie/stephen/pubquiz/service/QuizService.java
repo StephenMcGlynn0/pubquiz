@@ -35,6 +35,10 @@ public class QuizService {
         return questions;
     }
 
+    public int getCount(List<String> categories, String difficulty) {
+        return questionRepository.countByFilters(categories, difficulty);
+    }
+
     public void submitScore(String playerName, int score, int total, String category, String difficulty) {
         scoreRepository.save(playerName, score, total, category, difficulty);
     }

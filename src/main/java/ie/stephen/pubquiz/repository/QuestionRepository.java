@@ -65,6 +65,24 @@ public class QuestionRepository {
         });
     }
 
+    public int countByFilters(List<String> categories, String difficulty) {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM questions WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+
+        if (categories != null && !categories.isEmpty()) {
+            String placeholders = String.join(",", Collections.nCopies(categories.size(), "?"));
+            sql.append(" AND category IN (").append(placeholders).append(")");
+            params.addAll(categories);
+        }
+        if (difficulty != null && !difficulty.isBlank()) {
+            sql.append(" AND difficulty = ?");
+            params.add(difficulty);
+        }
+
+        Integer count = jdbc.queryForObject(sql.toString(), params.toArray(), Integer.class);
+        return count != null ? count : 0;
+    }
+
     public List<CategoryInfo> findDistinctCategories() {
         return jdbc.query(
                 "SELECT category, COUNT(*) as count FROM questions GROUP BY category HAVING COUNT(*) >= 5 ORDER BY category",

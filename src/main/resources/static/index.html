@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Pub Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dropdown-panel { display: none; }
+        .dropdown-panel.open { display: block; }
+    </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen font-sans">
 
@@ -18,11 +22,24 @@
                    class="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"/>
         </div>
         <div>
-            <label class="block text-sm text-gray-400 mb-1">Categories <span class="text-xs">(hold Ctrl to pick multiple)</span></label>
-            <select id="category" multiple
-                    class="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 h-36">
-                <option value="">Any Category</option>
-            </select>
+            <label class="block text-sm text-gray-400 mb-1">Categories</label>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Categories</label>
+                <div class="relative">
+                    <button type="button" id="category-btn" onclick="toggleDropdown()"
+                            class="w-full bg-gray-700 rounded-lg px-4 py-2 text-white text-left flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                        <span id="category-btn-text">Any Category</span>
+                        <span id="dropdown-arrow" class="text-gray-400 text-xs" style="transition: transform 0.2s">▼</span>
+                    </button>
+                    <div id="category-panel" class="dropdown-panel absolute z-10 w-full bg-gray-700 border border-yellow-400 rounded-lg mt-1 max-h-52 overflow-y-auto shadow-2xl">
+                        <label class="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-600">
+                            <input type="checkbox" id="any-category" checked class="accent-yellow-400 w-4 h-4"/>
+                            <span class="text-sm">Any Category</span>
+                        </label>
+                        <div id="category-container"></div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div>
             <label class="block text-sm text-gray-400 mb-1">Difficulty</label>
@@ -129,36 +146,78 @@
         try {
             const res = await fetch('/api/categories');
             const cats = await res.json();
-            const sel = document.getElementById('category');
-            sel.innerHTML = '<option value="">Any Category</option>';
+            const container = document.getElementById('category-container');
+
             cats.forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat.name;
-                opt.textContent = decodeHTML(cat.name) + ` (${cat.questionCount})`;
-                opt.dataset.count = cat.questionCount;
-                sel.appendChild(opt);
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-gray-600';
+                label.innerHTML = `
+                <input type="checkbox" value="${cat.name}" data-count="${cat.questionCount}"
+                       class="accent-yellow-400 w-4 h-4 category-checkbox"/>
+                <span class="text-sm flex-1">${decodeHTML(cat.name)}</span>
+                <span class="text-xs text-gray-400">${cat.questionCount}</span>
+            `;
+                container.appendChild(label);
             });
+
+            document.querySelectorAll('.category-checkbox, #any-category').forEach(cb => {
+                cb.addEventListener('change', handleCategoryChange);
+            });
+
         } catch (e) {
             console.log('Could not load categories yet');
         }
     }
 
-    function updateAmountOptions() {
-        const categorySelect = document.getElementById('category');
-        const selectedOptions = Array.from(categorySelect.selectedOptions).filter(o => o.value !== '');
+    async function handleCategoryChange(e) {
+        const anyCb = document.getElementById('any-category');
+
+        if (e.target.id === 'any-category') {
+            if (e.target.checked) {
+                document.querySelectorAll('.category-checkbox').forEach(cb => cb.checked = false);
+            }
+        } else {
+            if (e.target.checked) {
+                anyCb.checked = false;
+            }
+            const anyChecked = Array.from(document.querySelectorAll('.category-checkbox')).some(cb => cb.checked);
+            if (!anyChecked) anyCb.checked = true;
+        }
+
+        updateDropdownLabel()
+        await updateAmountOptions();
+    }
+
+
+    async function updateAmountOptions() {
+        const anyCb = document.getElementById('any-category');
+        const selectedBoxes = Array.from(document.querySelectorAll('.category-checkbox:checked'));
+        const difficulty = document.getElementById('difficulty').value;
 
         let maxCount;
-        if (selectedOptions.length === 0) {
-            maxCount = 999;
-            document.getElementById('amount-hint').textContent = '';
+
+        if (anyCb && anyCb.checked || selectedBoxes.length === 0) {
+            // Any category selected — just check difficulty filter
+            let url = '/api/quiz/count';
+            if (difficulty) url += `?difficulty=${difficulty}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            maxCount = data.count;
         } else {
-            maxCount = selectedOptions.reduce((sum, opt) => sum + parseInt(opt.dataset.count || 0), 0);
-            document.getElementById('amount-hint').textContent = `Max ${maxCount} questions available`;
+            // Specific categories selected
+            const selectedCategories = selectedBoxes.map(cb => cb.value);
+            let url = '/api/quiz/count?';
+            selectedCategories.forEach(cat => url += `&category=${encodeURIComponent(cat)}`);
+            if (difficulty) url += `&difficulty=${difficulty}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            maxCount = data.count;
         }
+
+        document.getElementById('amount-hint').textContent = `Max ${maxCount} questions available`;
 
         const amountInput = document.getElementById('amount');
         amountInput.max = maxCount;
-
         if (parseInt(amountInput.value) > maxCount) {
             amountInput.value = maxCount;
         }
@@ -175,10 +234,10 @@
         }
         document.getElementById('home-error').classList.add('hidden');
 
-        const categorySelect = document.getElementById('category');
-        const selectedCategories = Array.from(categorySelect.selectedOptions)
-            .map(opt => opt.value)
-            .filter(v => v !== '');
+        const anyCb = document.getElementById('any-category');
+        const selectedCategories = anyCb.checked
+            ? []
+            : Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => cb.value);
 
         quizDifficulty = document.getElementById('difficulty').value;
         const amount = parseInt(document.getElementById('amount').value);
@@ -337,9 +396,43 @@
         });
     }
 
+    function toggleDropdown() {
+        const panel = document.getElementById('category-panel');
+        const arrow = document.getElementById('dropdown-arrow');
+        panel.classList.toggle('open');
+        arrow.style.transform = panel.classList.contains('open') ? 'rotate(180deg)' : '';
+    }
+
+    function closeDropdown() {
+        document.getElementById('category-panel').classList.remove('open');
+        document.getElementById('dropdown-arrow').style.transform = '';
+    }
+
+    function updateDropdownLabel() {
+        const anyCb = document.getElementById('any-category');
+        const selected = Array.from(document.querySelectorAll('.category-checkbox:checked'));
+        const label = document.getElementById('category-btn-text');
+        if (anyCb.checked || selected.length === 0) {
+            label.textContent = 'Any Category';
+        } else if (selected.length === 1) {
+            label.textContent = decodeHTML(selected[0].value);
+        } else {
+            label.textContent = `${selected.length} categories selected`;
+        }
+    }
+
     function playAgain() { showScreen('screen-home'); }
 
-    document.getElementById('category').addEventListener('change', updateAmountOptions);
+    const difficultyEl = document.getElementById('difficulty');
+    if (difficultyEl) {
+        difficultyEl.addEventListener('change', updateAmountOptions);
+    }
+
+    document.addEventListener('click', e => {
+        const btn = document.getElementById('category-btn');
+        const panel = document.getElementById('category-panel');
+        if (btn && panel && !btn.contains(e.target) && !panel.contains(e.target)) closeDropdown();
+    });
 
     showScreen('screen-home');
     loadCategories();

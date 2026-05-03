@@ -34,6 +34,14 @@ public class QuizController {
         return ResponseEntity.ok(questions);
     }
 
+    @GetMapping("/quiz/count")
+    public ResponseEntity<Map<String, Integer>> getCount(
+            @RequestParam(required = false) List<String> category,
+            @RequestParam(required = false) String difficulty) {
+        int count = quizService.getCount(category, difficulty);
+        return ResponseEntity.ok(Map.of("count", count));
+    }
+
     @PostMapping("/quiz/score")
     public ResponseEntity<Map<String, String>> submitScore(@RequestBody Map<String, Object> body) {
         String playerName = (String) body.get("playerName");
