@@ -26,7 +26,7 @@ public class QuizController {
             @RequestParam(required = false) String difficulty,
             @RequestParam(defaultValue = "10") int amount) {
 
-        if (amount < 1 || amount > 20) {
+        if (amount < 1 || amount > 500) {
             return ResponseEntity.badRequest().build();
         }
 
