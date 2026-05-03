@@ -22,7 +22,7 @@ public class QuizController {
 
     @GetMapping("/quiz/start")
     public ResponseEntity<List<Question>> startQuiz(
-            @RequestParam(required = false) String category,
+            @RequestParam(required = false) List<String> category,
             @RequestParam(required = false) String difficulty,
             @RequestParam(defaultValue = "10") int amount) {
 

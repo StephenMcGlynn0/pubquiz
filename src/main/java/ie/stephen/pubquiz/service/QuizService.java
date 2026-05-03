@@ -24,17 +24,12 @@ public class QuizService {
         this.triviaFetchService = triviaFetchService;
     }
 
-    public List<Question> startQuiz(String category, String difficulty, int amount) {
-        int count = questionRepository.count();
-        if (count < 50) {
-            triviaFetchService.fetchAndStore(50, difficulty);
-        }
-
-        List<Question> questions = questionRepository.findByFilters(category, difficulty, amount);
+    public List<Question> startQuiz(List<String> categories, String difficulty, int amount) {
+        List<Question> questions = questionRepository.findByFilters(categories, difficulty, amount);
 
         if (questions.size() < amount) {
-            triviaFetchService.fetchAndStore(amount, difficulty);
-            questions = questionRepository.findByFilters(category, difficulty, amount);
+            triviaFetchService.fetchAndStore(50, difficulty);
+            questions = questionRepository.findByFilters(categories, difficulty, amount);
         }
 
         return questions;
