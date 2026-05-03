@@ -132,15 +132,40 @@
             const res = await fetch('/api/categories');
             const cats = await res.json();
             const sel = document.getElementById('category');
+            sel.innerHTML = '<option value="">Any Category</option>';
             cats.forEach(cat => {
                 const opt = document.createElement('option');
-                opt.value = cat;
-                opt.textContent = decodeHTML(cat);
+                opt.value = cat.name;
+                opt.textContent = decodeHTML(cat.name) + ` (${cat.questionCount})`;
+                opt.dataset.count = cat.questionCount;
                 sel.appendChild(opt);
             });
         } catch (e) {
             console.log('Could not load categories yet');
         }
+    }
+
+    function updateAmountOptions() {
+        const sel = document.getElementById('category');
+        const selectedOption = sel.options[sel.selectedIndex];
+        const count = selectedOption.dataset.count ? parseInt(selectedOption.dataset.count) : 999;
+
+        const amountSel = document.getElementById('amount');
+        const currentAmount = parseInt(amountSel.value);
+        amountSel.innerHTML = '';
+
+        [5, 10, 15, 20].forEach(n => {
+            if (n <= count) {
+                const opt = document.createElement('option');
+                opt.value = n;
+                opt.textContent = n;
+                if (n === currentAmount) opt.selected = true;
+                amountSel.appendChild(opt);
+            }
+        });
+
+        // If no option selected default to first available
+        if (!amountSel.value) amountSel.options[0].selected = true;
     }
 
     async function startQuiz() {
@@ -305,6 +330,8 @@
     }
 
     function playAgain() { showScreen('screen-home'); }
+
+    document.getElementById('category').addEventListener('change', updateAmountOptions);
 
     showScreen('screen-home');
     loadCategories();

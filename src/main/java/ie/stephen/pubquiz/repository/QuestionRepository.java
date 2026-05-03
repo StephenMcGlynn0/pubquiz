@@ -27,16 +27,17 @@ public class QuestionRepository {
         """, externalId, category, difficulty, question, correctAnswer, incorrectAnswers);
     }
 
-    public List<Question> findByFilters(String category, String difficulty, int limit) {
+    public List<Question> findByFilters(List<String> categories, String difficulty, int limit) {
         StringBuilder sql = new StringBuilder(
                 "SELECT id, category, difficulty, question, correct_answer, incorrect_answers FROM questions WHERE 1=1"
         );
 
         List<Object> params = new ArrayList<>();
 
-        if (category != null && !category.isBlank()) {
-            sql.append(" AND category = ?");
-            params.add(category);
+        if (categories != null && !categories.isEmpty()) {
+            String placeholders = String.join(",", Collections.nCopies(categories.size(), "?"));
+            sql.append(" AND category IN (").append(placeholders).append(")");
+            params.addAll(categories);
         }
         if (difficulty != null && !difficulty.isBlank()) {
             sql.append(" AND difficulty = ?");
