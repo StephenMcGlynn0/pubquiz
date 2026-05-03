@@ -65,7 +65,8 @@ public class QuestionRepository {
 
     public List<String> findDistinctCategories() {
         return jdbc.queryForList(
-                "SELECT DISTINCT category FROM questions ORDER BY category", String.class
+                "SELECT category FROM questions GROUP BY category HAVING COUNT(*) >= 5 ORDER BY category",
+                String.class
         );
     }
 
