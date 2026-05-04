@@ -41,6 +41,8 @@ public class QuizService {
 
     public void submitScore(String playerName, int score, int total, String category, String difficulty) {
         scoreRepository.save(playerName, score, total, category, difficulty);
+        triviaFetchService.fetchAndStore(50, null);
+        System.out.println("Background fetch done. Total: " + questionRepository.count());
     }
 
     public List<Score> getLeaderboard() {
