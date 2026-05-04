@@ -311,12 +311,19 @@
         const isCorrect = selected === correct;
         if (isCorrect) {
             score++;
-            btn.className = btn.className.replace('bg-gray-700', 'bg-green-600');
+            btn.style.background = '#16a34a';
+            btn.style.borderColor = '#16a34a';
+            btn.style.color = '#fff';
         } else {
-            btn.className = btn.className.replace('bg-gray-700', 'bg-red-600');
+            btn.style.background = '#dc2626';
+            btn.style.borderColor = '#dc2626';
+            btn.style.color = '#fff';
+            // highlight correct answer green
             document.querySelectorAll('#answers button').forEach(b => {
                 if (b.textContent.trim() === decodeHTML(correct).trim()) {
-                    b.className = b.className.replace('bg-gray-700', 'bg-green-600');
+                    b.style.background = '#16a34a';
+                    b.style.borderColor = '#16a34a';
+                    b.style.color = '#fff';
                 }
             });
         }
