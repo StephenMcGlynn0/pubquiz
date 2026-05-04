@@ -320,7 +320,6 @@
         const totalPages = Math.ceil(filteredQuestions.length / PAGE_SIZE);
         currentPage = Math.max(1, Math.min(currentPage + dir, totalPages));
         renderTable();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     // ── ADD ──
@@ -382,14 +381,20 @@
         document.getElementById('edit-id').value = q.id;
         document.getElementById('edit-category').value = q.category;
         document.getElementById('edit-difficulty').value = q.difficulty;
-        document.getElementById('edit-question').value = q.question;
-        document.getElementById('edit-correct').value = q.correctAnswer;
-        document.getElementById('edit-wrong1').value = wrongAnswers[0] || '';
-        document.getElementById('edit-wrong2').value = wrongAnswers[1] || '';
-        document.getElementById('edit-wrong3').value = wrongAnswers[2] || '';
+        document.getElementById('edit-question').value = decodeHTML(q.question);
+        document.getElementById('edit-correct').value = decodeHTML(q.correctAnswer);
+        document.getElementById('edit-wrong1').value = decodeHTML(wrongAnswers[0] || '');
+        document.getElementById('edit-wrong2').value = decodeHTML(wrongAnswers[1] || '');
+        document.getElementById('edit-wrong3').value = decodeHTML(wrongAnswers[2] || '');
         document.getElementById('edit-error').textContent = '';
 
         document.getElementById('edit-modal').classList.add('open');
+    }
+
+    function decodeHTML(str) {
+        const txt = document.createElement('textarea');
+        txt.innerHTML = str || '';
+        return txt.value;
     }
 
     function closeModal() {
