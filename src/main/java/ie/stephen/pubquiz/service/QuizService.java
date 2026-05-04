@@ -55,4 +55,24 @@ public class QuizService {
         }
         return categories;
     }
+
+    public List<Question> getAllQuestions() {
+        return questionRepository.findAll();
+    }
+
+    public void addQuestion(String category, String difficulty, String question,
+                            String correctAnswer, List<String> incorrectAnswers) {
+        String incorrect = String.join("||", incorrectAnswers);
+        questionRepository.insert(category, difficulty, question, correctAnswer, incorrect, "user");
+    }
+
+    public void updateQuestion(Long id, String category, String difficulty, String question,
+                               String correctAnswer, List<String> incorrectAnswers) {
+        String incorrect = String.join("||", incorrectAnswers);
+        questionRepository.update(id, category, difficulty, question, correctAnswer, incorrect);
+    }
+
+    public void deleteQuestion(Long id) {
+        questionRepository.delete(id);
+    }
 }
