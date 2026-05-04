@@ -97,7 +97,7 @@ public class QuestionRepository {
 
     public List<Question> findAll() {
         return jdbc.query("""
-        SELECT id, category, difficulty, question, correct_answer, incorrect_answers
+        SELECT id, category, difficulty, question, correct_answer, incorrect_answers, source
         FROM questions
         ORDER BY id DESC
     """, (rs, rowNum) -> {
@@ -107,6 +107,11 @@ public class QuestionRepository {
             q.setDifficulty(rs.getString("difficulty"));
             q.setQuestion(rs.getString("question"));
             q.setCorrectAnswer(rs.getString("correct_answer"));
+            q.setSource(rs.getString("source"));
+            String incorrectRaw = rs.getString("incorrect_answers");
+            if (incorrectRaw != null) {
+                q.setIncorrectAnswers(Arrays.asList(incorrectRaw.split("\\|\\|")));
+            }
             return q;
         });
     }
