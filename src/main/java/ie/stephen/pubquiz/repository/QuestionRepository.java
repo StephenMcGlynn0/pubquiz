@@ -95,4 +95,41 @@ public class QuestionRepository {
         return count != null ? count : 0;
     }
 
+    public List<Question> findAll() {
+        return jdbc.query("""
+        SELECT id, category, difficulty, question, correct_answer, incorrect_answers
+        FROM questions
+        ORDER BY id DESC
+    """, (rs, rowNum) -> {
+            Question q = new Question();
+            q.setId(rs.getLong("id"));
+            q.setCategory(rs.getString("category"));
+            q.setDifficulty(rs.getString("difficulty"));
+            q.setQuestion(rs.getString("question"));
+            q.setCorrectAnswer(rs.getString("correct_answer"));
+            return q;
+        });
+    }
+
+    public void insert(String category, String difficulty, String question,
+                       String correctAnswer, String incorrectAnswers, String source) {
+        jdbc.update("""
+        INSERT INTO questions (category, difficulty, question, correct_answer, incorrect_answers, source)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, category, difficulty, question, correctAnswer, incorrectAnswers, source);
+    }
+
+    public void update(Long id, String category, String difficulty, String question,
+                       String correctAnswer, String incorrectAnswers) {
+        jdbc.update("""
+        UPDATE questions
+        SET category = ?, difficulty = ?, question = ?, correct_answer = ?, incorrect_answers = ?
+        WHERE id = ?
+    """, category, difficulty, question, correctAnswer, incorrectAnswers, id);
+    }
+
+    public void delete(Long id) {
+        jdbc.update("DELETE FROM questions WHERE id = ?", id);
+    }
+
 }

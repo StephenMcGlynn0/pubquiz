@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS questions (
     question TEXT,
     correct_answer TEXT,
     incorrect_answers TEXT,
+    source TEXT DEFAULT 'api',
     fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
