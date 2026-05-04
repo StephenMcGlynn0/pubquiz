@@ -112,23 +112,8 @@
         <p class="text-gray-400 text-sm self-center" id="result-count"></p>
     </div>
 
-    <!-- Table -->
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
-        <table class="w-full text-sm">
-            <thead>
-            <tr class="border-b border-gray-700">
-                <th class="text-left px-4 py-3 text-gray-400 font-semibold uppercase tracking-wider text-xs w-8">#</th>
-                <th class="text-left px-4 py-3 text-gray-400 font-semibold uppercase tracking-wider text-xs">Question</th>
-                <th class="text-left px-4 py-3 text-gray-400 font-semibold uppercase tracking-wider text-xs">Category</th>
-                <th class="text-left px-4 py-3 text-gray-400 font-semibold uppercase tracking-wider text-xs">Difficulty</th>
-                <th class="text-left px-4 py-3 text-gray-400 font-semibold uppercase tracking-wider text-xs">Source</th>
-                <th class="text-left px-4 py-3 text-gray-400 font-semibold uppercase tracking-wider text-xs">Actions</th>
-            </tr>
-            </thead>
-            <tbody id="questions-table"></tbody>
-        </table>
-        <div id="table-loading" class="text-center py-12 text-gray-400">Loading questions...</div>
-    </div>
+    <div id="questions-cards" class="space-y-3"></div>
+    <div id="table-loading" class="text-center py-12 text-gray-400">Loading questions...</div>
 
     <!-- Pagination -->
     <div class="flex justify-between items-center mt-4">
@@ -267,53 +252,50 @@
         renderTable();
     }
 
-    // ── TABLE ──
     function renderTable() {
         const start = (currentPage - 1) * PAGE_SIZE;
         const end = start + PAGE_SIZE;
         const page = filteredQuestions.slice(start, end);
         const totalPages = Math.ceil(filteredQuestions.length / PAGE_SIZE);
 
-        const tbody = document.getElementById('questions-table');
-        tbody.innerHTML = '';
+        const cards = document.getElementById('questions-cards');
+        cards.innerHTML = '';
 
         if (page.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-12 text-gray-400">No questions found.</td></tr>';
+            cards.innerHTML = '<p class="text-center text-gray-400 py-12">No questions found.</p>';
         }
 
         page.forEach((q, i) => {
-            const wrong = q.incorrectAnswers || [];
-            const tr = document.createElement('tr');
-            tr.className = 'border-b border-gray-700 cursor-pointer';
-            tr.innerHTML = `
-                <td class="px-4 py-3 text-gray-500">${start + i + 1}</td>
-                <td class="px-4 py-3 max-w-xs">
-                    <p class="truncate" title="${escapeHtml(q.question)}">${escapeHtml(q.question)}</p>
-                </td>
-                <td class="px-4 py-3 text-gray-300">${escapeHtml(q.category)}</td>
-                <td class="px-4 py-3 capitalize text-gray-300">${q.difficulty}</td>
-                <td class="px-4 py-3">
-                    <span class="text-xs font-semibold px-2 py-1 rounded-full ${q.source === 'user' ? 'source-user' : 'source-api'}">
+            const card = document.createElement('div');
+            card.className = 'bg-gray-800 border border-gray-700 rounded-xl p-4 flex justify-between items-start gap-4';
+            card.innerHTML = `
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium mb-1">${escapeHtml(q.question)}</p>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    <span class="text-xs text-gray-400">${escapeHtml(q.category)}</span>
+                    <span class="text-xs text-gray-600">·</span>
+                    <span class="text-xs text-gray-400 capitalize">${q.difficulty}</span>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${q.source === 'user' ? 'source-user' : 'source-api'}">
                         ${q.source === 'user' ? 'User' : 'API'}
                     </span>
-                </td>
-                <td class="px-4 py-3">
-                    <div class="flex gap-2">
-                        <button onclick="openEdit(${q.id})" class="text-xs bg-gray-700 border border-gray-600 px-3 py-1 rounded-lg hover:border-yellow-400 hover:text-yellow-400 transition">
-                            Edit
-                        </button>
-                        <button onclick="deleteQuestion(${q.id})" class="text-xs bg-gray-700 border border-gray-600 px-3 py-1 rounded-lg hover:border-red-500 hover:text-red-400 transition">
-                            Delete
-                        </button>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(tr);
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 shrink-0">
+                <button onclick="openEdit(${q.id})" class="text-xs bg-gray-700 border border-gray-600 px-3 py-1.5 rounded-lg hover:border-yellow-400 hover:text-yellow-400 transition">
+                    Edit
+                </button>
+                <button onclick="deleteQuestion(${q.id})" class="text-xs bg-gray-700 border border-gray-600 px-3 py-1.5 rounded-lg hover:border-red-500 hover:text-red-400 transition">
+                    Delete
+                </button>
+            </div>
+        `;
+            cards.appendChild(card);
         });
 
         document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages || 1}`;
         document.getElementById('prev-btn').disabled = currentPage === 1;
         document.getElementById('next-page-btn').disabled = currentPage >= totalPages;
+        document.getElementById('table-loading').style.display = 'none';
     }
 
     function changePage(dir) {
