@@ -2,6 +2,7 @@ package ie.stephen.pubquiz.controller;
 
 import ie.stephen.pubquiz.model.Question;
 import ie.stephen.pubquiz.service.QuizService;
+import ie.stephen.pubquiz.service.ValidationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,9 +14,11 @@ import java.util.Map;
 public class AdminController {
 
     private final QuizService quizService;
+    private final ValidationService validationService;
 
-    public AdminController(QuizService quizService) {
+    public AdminController(QuizService quizService, ValidationService validationService) {
         this.quizService = quizService;
+        this.validationService = validationService;
     }
 
     @GetMapping("/questions")
@@ -34,6 +37,11 @@ public class AdminController {
         if (category == null || difficulty == null || question == null ||
                 correctAnswer == null || incorrectAnswers == null || incorrectAnswers.size() != 3) {
             return ResponseEntity.badRequest().body(Map.of("error", "All fields required, must have exactly 3 incorrect answers"));
+        }
+
+        ValidationService.ValidationResult validation = validationService.validate(question, correctAnswer, incorrectAnswers);
+        if (!validation.valid()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "AI validation failed: " + validation.reason()));
         }
 
         quizService.addQuestion(category, difficulty, question, correctAnswer, incorrectAnswers);
